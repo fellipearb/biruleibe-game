@@ -1,0 +1,19 @@
+{
+  "name": "game-biruleibe",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Arcade 2D Run-and-Gun satírico inspirado em Metal Slug com temática da política brasileira",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "phaser": "^3.80.1"
+  },
+  "devDependencies": {
+    "typescript": "^5.4.5",
+    "vite": "^5.2.11"
+  }
+}
