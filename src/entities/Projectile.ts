@@ -95,29 +95,29 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     body.setGravityY(config.gravityY ?? 0);
     body.setVelocity(config.vx, config.vy);
 
-    // Calibrate hitbox per projectile type
+    // Calibrate hitbox per projectile type (Metal Slug larger scale)
     if (config.type === 'sonic_wave') {
-      body.setSize(22, 26);
+      body.setSize(32, 36);
       this.spinSpeed = 0;
       this.setRotation(Math.atan2(config.vy, config.vx));
     } else if (config.type === 'chair_enemy' || config.type === 'chair_player') {
-      body.setSize(22, 22);
+      body.setSize(34, 34);
       this.spinSpeed = config.spinSpeed ?? 10;
     } else if (config.type === 'mortadela_bomb') {
-      body.setSize(18, 18);
+      body.setSize(28, 24);
       this.spinSpeed = config.spinSpeed ?? 8;
     } else if (config.type === 'ctps') {
-      body.setSize(18, 14);
+      body.setSize(28, 22);
       this.spinSpeed = config.spinSpeed ?? 12;
     } else if (config.type === 'pamphlet') {
-      body.setSize(12, 10);
+      body.setSize(18, 16);
       this.spinSpeed = 6;
     } else if (config.type === 'homing_mic') {
-      body.setSize(14, 14);
+      body.setSize(24, 16);
       this.spinSpeed = 0;
       this.setRotation(Math.atan2(config.vy, config.vx));
     } else {
-      body.setSize(12, 8);
+      body.setSize(18, 10);
       this.spinSpeed = 0;
       this.setRotation(Math.atan2(config.vy, config.vx));
     }

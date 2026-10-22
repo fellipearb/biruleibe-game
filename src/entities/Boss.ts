@@ -76,25 +76,26 @@ export abstract class Boss extends Phaser.Physics.Arcade.Sprite {
       body.enable = false;
     }
 
-    // Multiple Metal-Slug style dramatic explosions
-    for (let i = 0; i < 8; i++) {
-      this.scene.time.delayedCall(i * 150, () => {
+    // Multiple Metal-Slug style dramatic chain explosions
+    for (let i = 0; i < 10; i++) {
+      this.scene.time.delayedCall(i * 130, () => {
         if (!this.scene) return;
-        const ox = this.x + Phaser.Math.Between(-50, 50);
-        const oy = this.y + Phaser.Math.Between(-40, 40);
-        const exp = this.scene.add.circle(ox, oy, 26, 0xff5500, 0.95);
+        const ox = this.x + Phaser.Math.Between(-80, 80);
+        const oy = this.y + Phaser.Math.Between(-65, 65);
+        const exp = this.scene.add.circle(ox, oy, 36, 0xff5500, 0.95);
+        exp.setStrokeStyle(5, 0xffff00);
         exp.setDepth(35);
         this.scene.tweens.add({
           targets: exp,
-          scale: 2.4,
+          scale: 2.5,
           alpha: 0,
-          duration: 300,
+          duration: 320,
           onComplete: () => exp.destroy()
         });
       });
     }
 
-    this.scene.time.delayedCall(1250, () => {
+    this.scene.time.delayedCall(1350, () => {
       this.destroy();
     });
   }
@@ -102,7 +103,6 @@ export abstract class Boss extends Phaser.Physics.Arcade.Sprite {
 
 /**
  * FASE 1 BOSS: Trio Elétrico da Glória Groove
- * Padrão de ataque: Lança ondas de choque musicais (arcos de som sonoro) e invoca dançarinos de apoio.
  */
 export class GloriaGrooveBoss extends Boss {
   private moveDir: number = -1;
@@ -128,26 +128,26 @@ export class GloriaGrooveBoss extends Boss {
       enemiesGroup
     );
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(128, 86);
+    body.setSize(196, 138);
+    body.setOffset(12, 8);
     body.setImmovable(true);
   }
 
   protected updateBossBehavior(_time: number, delta: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     const cam = this.scene.cameras.main;
-    const minX = cam.scrollX + 420;
-    const maxX = cam.scrollX + cam.width - 90;
+    const minX = cam.scrollX + 460;
+    const maxX = cam.scrollX + cam.width - 120;
 
     if (this.x <= minX) this.moveDir = 1;
     if (this.x >= maxX) this.moveDir = -1;
     body.setVelocityX(this.moveDir * 65);
 
-    // Musical shockwave arc attack
     this.attackTimer -= delta;
     if (this.attackTimer <= 0) {
       this.attackTimer = 1550;
       const baseAngle = Phaser.Math.Angle.Between(
-        this.x - 40,
+        this.x - 70,
         this.y - 10,
         this.player.x,
         this.player.y
@@ -156,10 +156,10 @@ export class GloriaGrooveBoss extends Boss {
       for (const offset of spreadAngles) {
         const ang = baseAngle + offset;
         this.enemyProjectiles.spawn({
-          x: this.x - 45,
+          x: this.x - 75,
           y: this.y - 12,
-          vx: Math.cos(ang) * 260,
-          vy: Math.sin(ang) * 260,
+          vx: Math.cos(ang) * 270,
+          vy: Math.sin(ang) * 270,
           type: 'sonic_wave',
           damage: 14,
           isPlayerOwned: false,
@@ -168,14 +168,13 @@ export class GloriaGrooveBoss extends Boss {
       }
     }
 
-    // Summon backup dancers
     this.secondaryTimer -= delta;
     if (this.secondaryTimer <= 0) {
       this.secondaryTimer = 4200;
       if (this.enemiesGroup.countActive(true) < 4) {
         const dancer: Enemy = new BackupDancerEnemy(
           this.scene,
-          this.x - 65,
+          this.x - 95,
           this.y + 10,
           this.player,
           this.enemyProjectiles
@@ -188,7 +187,6 @@ export class GloriaGrooveBoss extends Boss {
 
 /**
  * FASE 2 BOSS: Jato Executivo da Erika Hilton
- * Padrão de ataque: Voo rasante, metralhadoras em leque e lançamento de microfones tele-guiados.
  */
 export class ErikaHiltonJetBoss extends Boss {
   private flightPhase: number = 0;
@@ -218,7 +216,8 @@ export class ErikaHiltonJetBoss extends Boss {
     );
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
-    body.setSize(118, 52);
+    body.setSize(184, 80);
+    body.setOffset(10, 8);
   }
 
   protected updateBossBehavior(_time: number, delta: number): void {
@@ -233,23 +232,21 @@ export class ErikaHiltonJetBoss extends Boss {
     }
 
     if (this.isSwooping) {
-      // Voo rasante (low-altitude high speed pass)
-      const targetY = 330;
-      body.setVelocityX(this.swoopDir * 340);
+      const targetY = 320;
+      body.setVelocityX(this.swoopDir * 350);
       body.setVelocityY((targetY - this.y) * 4);
       this.setFlipX(this.swoopDir < 0);
 
       if (
-        (this.swoopDir < 0 && this.x < cam.scrollX + 110) ||
-        (this.swoopDir > 0 && this.x > cam.scrollX + cam.width - 110)
+        (this.swoopDir < 0 && this.x < cam.scrollX + 130) ||
+        (this.swoopDir > 0 && this.x > cam.scrollX + cam.width - 130)
       ) {
         this.isSwooping = false;
       }
     } else {
-      // Hovering in air across the arena
       this.flightPhase += delta * 0.0022;
       const centerX = cam.scrollX + cam.width * 0.65;
-      const desiredX = centerX + Math.sin(this.flightPhase) * 190;
+      const desiredX = centerX + Math.sin(this.flightPhase) * 180;
       const desiredY = 135 + Math.cos(this.flightPhase * 2) * 35;
 
       body.setVelocityX((desiredX - this.x) * 3);
@@ -257,7 +254,6 @@ export class ErikaHiltonJetBoss extends Boss {
       this.setFlipX(this.player.x < this.x);
     }
 
-    // Metralhadoras em leque (Fan machine-gun spread)
     this.attackTimer -= delta;
     if (this.attackTimer <= 0) {
       this.attackTimer = 1700;
@@ -272,9 +268,9 @@ export class ErikaHiltonJetBoss extends Boss {
         const a = baseAngle + offset;
         this.enemyProjectiles.spawn({
           x: this.x,
-          y: this.y + 18,
-          vx: Math.cos(a) * 290,
-          vy: Math.sin(a) * 290,
+          y: this.y + 28,
+          vx: Math.cos(a) * 300,
+          vy: Math.sin(a) * 300,
           type: 'police_bullet',
           damage: 11,
           isPlayerOwned: false
@@ -282,14 +278,13 @@ export class ErikaHiltonJetBoss extends Boss {
       }
     }
 
-    // Microfones tele-guiados (Homing microphones)
     this.secondaryTimer -= delta;
     if (this.secondaryTimer <= 0) {
       this.secondaryTimer = 3100;
       this.enemyProjectiles.spawn({
         x: this.x,
-        y: this.y + 20,
-        vx: this.player.x < this.x ? -180 : 180,
+        y: this.y + 28,
+        vx: this.player.x < this.x ? -190 : 190,
         vy: -90,
         type: 'homing_mic',
         damage: 15,
@@ -304,7 +299,6 @@ export class ErikaHiltonJetBoss extends Boss {
 
 /**
  * FASE 3 BOSS: Boulos
- * Padrão de ataque: Pulos altos (ground pound) e arremesso parabólico de "Pão com Mortadela" explosivo.
  */
 export class BoulosBoss extends Boss {
   private wasInAir: boolean = false;
@@ -331,7 +325,8 @@ export class BoulosBoss extends Boss {
       enemiesGroup
     );
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(52, 68);
+    body.setSize(82, 118);
+    body.setOffset(13, 6);
   }
 
   protected updateBossBehavior(_time: number, delta: number): void {
@@ -340,16 +335,14 @@ export class BoulosBoss extends Boss {
     const dx = this.player.x - this.x;
     this.setFlipX(dx < 0);
 
-    // Detect Ground Pound landing!
     if (this.wasInAir && onGround) {
       this.wasInAir = false;
-      this.scene.cameras.main.shake(220, 0.012);
-      // Spawn horizontal ground-pound shockwaves left & right
+      this.scene.cameras.main.shake(240, 0.014);
       for (const dir of [-1, 1]) {
         this.enemyProjectiles.spawn({
-          x: this.x + dir * 24,
-          y: this.y + 20,
-          vx: dir * 320,
+          x: this.x + dir * 36,
+          y: this.y + 34,
+          vx: dir * 330,
           vy: 0,
           type: 'sonic_wave',
           damage: 16,
@@ -362,39 +355,36 @@ export class BoulosBoss extends Boss {
     if (!onGround) {
       this.wasInAir = true;
     } else {
-      // Move toward player moderately
-      if (Math.abs(dx) > 120) {
-        body.setVelocityX(Math.sign(dx) * 110);
+      if (Math.abs(dx) > 140) {
+        body.setVelocityX(Math.sign(dx) * 115);
       } else {
         body.setVelocityX(0);
       }
     }
 
-    // High Jump Ground Pound
     this.jumpCooldown -= delta;
     if (this.jumpCooldown <= 0 && onGround) {
       this.jumpCooldown = 2800;
-      body.setVelocityY(-540);
-      body.setVelocityX(Phaser.Math.Clamp(dx * 1.1, -260, 260));
+      body.setVelocityY(-560);
+      body.setVelocityX(Phaser.Math.Clamp(dx * 1.1, -270, 270));
     }
 
-    // Parabolic Explosive "Pão com Mortadela" throw
     this.attackTimer -= delta;
     if (this.attackTimer <= 0) {
       this.attackTimer = 1450;
       const dir = Math.sign(dx) || -1;
       for (let i = 0; i < 2; i++) {
         this.enemyProjectiles.spawn({
-          x: this.x + dir * 20,
-          y: this.y - 18,
-          vx: dir * Phaser.Math.Between(170, 310),
-          vy: Phaser.Math.Between(-380, -260),
+          x: this.x + dir * 34,
+          y: this.y - 26,
+          vx: dir * Phaser.Math.Between(180, 320),
+          vy: Phaser.Math.Between(-390, -270),
           type: 'mortadela_bomb',
           damage: 18,
           isPlayerOwned: false,
           useGravity: true,
           gravityY: 0,
-          explosiveRadius: 65,
+          explosiveRadius: 75,
           spinSpeed: 10
         });
       }
@@ -404,8 +394,6 @@ export class BoulosBoss extends Boss {
 
 /**
  * FASE 4 BOSS: Datena Supremo
- * Padrão de ataque: Lança cadeiras em linha reta e em arcos parabólicos.
- * Mecânica especial: O jogador pode pegar e atirar cadeiras de volta para rebater projéteis.
  */
 export class DatenaSupremoBoss extends Boss {
   private paceDir: number = -1;
@@ -431,14 +419,15 @@ export class DatenaSupremoBoss extends Boss {
       enemiesGroup
     );
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(54, 70);
+    body.setSize(86, 122);
+    body.setOffset(13, 6);
   }
 
   protected updateBossBehavior(_time: number, delta: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     const cam = this.scene.cameras.main;
-    const minX = cam.scrollX + 360;
-    const maxX = cam.scrollX + cam.width - 70;
+    const minX = cam.scrollX + 380;
+    const maxX = cam.scrollX + cam.width - 90;
 
     if (this.x <= minX) this.paceDir = 1;
     if (this.x >= maxX) this.paceDir = -1;
@@ -446,15 +435,14 @@ export class DatenaSupremoBoss extends Boss {
     body.setVelocityX(this.paceDir * 95);
     this.setFlipX(this.player.x < this.x);
 
-    // Straight-line fast chair throw
     this.attackTimer -= delta;
     if (this.attackTimer <= 0) {
       this.attackTimer = 1400;
       const dir = this.player.x < this.x ? -1 : 1;
       this.enemyProjectiles.spawn({
-        x: this.x + dir * 26,
-        y: this.y - 6,
-        vx: dir * 320,
+        x: this.x + dir * 38,
+        y: this.y - 10,
+        vx: dir * 330,
         vy: 0,
         type: 'chair_enemy',
         damage: 16,
@@ -465,18 +453,17 @@ export class DatenaSupremoBoss extends Boss {
       });
     }
 
-    // Parabolic arc chair volley
     this.secondaryTimer -= delta;
     if (this.secondaryTimer <= 0) {
       this.secondaryTimer = 2400;
       const dir = this.player.x < this.x ? -1 : 1;
-      const speeds = [200, 310];
+      const speeds = [210, 320];
       for (const vxMag of speeds) {
         this.enemyProjectiles.spawn({
-          x: this.x + dir * 20,
-          y: this.y - 24,
+          x: this.x + dir * 32,
+          y: this.y - 34,
           vx: dir * vxMag,
-          vy: -380,
+          vy: -390,
           type: 'chair_enemy',
           damage: 16,
           isPlayerOwned: false,
@@ -492,10 +479,7 @@ export class DatenaSupremoBoss extends Boss {
 }
 
 /**
- * FASE 5 FINAL BOSS: Lula (dentro de uma cúpula/canhão gigante de energia)
- * Padrão de ataque: Canhão rotativo disparando projéteis mistos combinados de todas as fases anteriores
- * (cadeiras voadoras, pães com mortadela, carteiras de trabalho e notas musicais).
- * Três fases de vida com aumento progressivo de velocidade e densidade de balas (bullet-hell leve).
+ * FASE 5 FINAL BOSS: Mecha-Lula (Cúpula de Energia & Canhão Rotativo)
  */
 export class LulaFinalBoss extends Boss {
   private cannonAngle: number = Math.PI;
@@ -526,14 +510,13 @@ export class LulaFinalBoss extends Boss {
     );
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
-    body.setSize(110, 110);
+    body.setSize(166, 166);
+    body.setOffset(15, 15);
 
-    // Energy dome aura
-    this.domeShieldGraphic = scene.add.circle(x, y, 68, 0xff0033, 0.18);
-    this.domeShieldGraphic.setStrokeStyle(3, 0xffdd00, 0.85);
+    this.domeShieldGraphic = scene.add.circle(x, y, 102, 0xff0033, 0.18);
+    this.domeShieldGraphic.setStrokeStyle(4, 0xffdd00, 0.85);
     this.domeShieldGraphic.setDepth(17);
 
-    // Rotating cannon barrel
     this.turretGraphic = scene.add.sprite(x, y, 'boss_lula_cannon');
     this.turretGraphic.setDepth(19);
   }
@@ -542,7 +525,6 @@ export class LulaFinalBoss extends Boss {
     const body = this.body as Phaser.Physics.Arcade.Body;
     const cam = this.scene.cameras.main;
 
-    // Determine Boss Phase (1, 2, or 3) based on HP ratio
     const hpRatio = this.hp / this.maxHp;
     if (hpRatio <= 0.33 && this.currentPhase !== 3) {
       this.currentPhase = 3;
@@ -556,18 +538,16 @@ export class LulaFinalBoss extends Boss {
       this.scene.cameras.main.shake(200, 0.01);
     }
 
-    // Hover movement inside arena
     const speedMult = this.currentPhase === 3 ? 1.8 : this.currentPhase === 2 ? 1.35 : 1.0;
     this.hoverClock += (delta * 0.002) * speedMult;
 
-    const arenaRight = cam.scrollX + cam.width - 130;
+    const arenaRight = cam.scrollX + cam.width - 150;
     const targetX = arenaRight + Math.sin(this.hoverClock) * 75;
-    const targetY = 235 + Math.cos(this.hoverClock * 1.6) * 85;
+    const targetY = 235 + Math.cos(this.hoverClock * 1.6) * 80;
 
     body.setVelocityX((targetX - this.x) * 3);
     body.setVelocityY((targetY - this.y) * 3);
 
-    // Update dome and rotating cannon position/angle
     this.domeShieldGraphic.setPosition(this.x, this.y);
     const angleToPlayer = Phaser.Math.Angle.Between(
       this.x,
@@ -583,7 +563,6 @@ export class LulaFinalBoss extends Boss {
     this.turretGraphic.setPosition(this.x, this.y);
     this.turretGraphic.setRotation(this.cannonAngle);
 
-    // Mixed Projectile Barrage (Chairs, Mortadela Bread, CTPS, Musical Notes)
     this.attackTimer -= delta;
     const fireInterval =
       this.currentPhase === 3 ? 650 : this.currentPhase === 2 ? 980 : 1350;
@@ -602,11 +581,10 @@ export class LulaFinalBoss extends Boss {
       'sonic_wave'
     ];
 
-    // Number of projectiles per burst scales with phase (light bullet-hell)
     const count = this.currentPhase === 3 ? 5 : this.currentPhase === 2 ? 3 : 2;
     const spreadStep = this.currentPhase === 3 ? 0.24 : 0.28;
     const bulletSpeed =
-      this.currentPhase === 3 ? 310 : this.currentPhase === 2 ? 265 : 225;
+      this.currentPhase === 3 ? 320 : this.currentPhase === 2 ? 275 : 235;
 
     const startOffset = -((count - 1) / 2) * spreadStep;
     for (let i = 0; i < count; i++) {
@@ -615,15 +593,15 @@ export class LulaFinalBoss extends Boss {
         mixedTypes[(i + Phaser.Math.Between(0, mixedTypes.length - 1)) % mixedTypes.length];
 
       this.enemyProjectiles.spawn({
-        x: this.x + Math.cos(angle) * 48,
-        y: this.y + Math.sin(angle) * 48,
+        x: this.x + Math.cos(angle) * 68,
+        y: this.y + Math.sin(angle) * 68,
         vx: Math.cos(angle) * bulletSpeed,
         vy: Math.sin(angle) * bulletSpeed,
         type: chosenType,
         damage: 14,
         isPlayerOwned: false,
         catchable: chosenType === 'chair_enemy',
-        explosiveRadius: chosenType === 'mortadela_bomb' ? 50 : 0,
+        explosiveRadius: chosenType === 'mortadela_bomb' ? 60 : 0,
         spinSpeed: chosenType === 'sonic_wave' ? 0 : 9,
         lifespan: 3600
       });

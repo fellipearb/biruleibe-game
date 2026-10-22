@@ -29,10 +29,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys;
   private projectilePool: ProjectilePool;
   private fireCooldown: number = 0;
-  private fireRateMs: number = 150;
+  private fireRateMs: number = 145;
   private invulnerableUntil: number = 0;
-  private speed: number = 220;
-  private jumpVelocity: number = -470;
+  private speed: number = 235;
+  private jumpVelocity: number = -520;
 
   // Visual overlays for gun / "arminha com a mão" / held chair
   private armGraphic: Phaser.GameObjects.Sprite;
@@ -60,8 +60,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.setDepth(20);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(26, 46);
-    body.setOffset(5, 2);
+    body.setSize(42, 76);
+    body.setOffset(13, 4);
 
     // Arm / weapon visual attachment
     this.armGraphic = scene.add.sprite(
@@ -71,8 +71,8 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     );
     this.armGraphic.setDepth(21);
 
-    // Held chair indicator for Phase 4
-    this.chairIcon = scene.add.sprite(x, y - 38, 'proj_chair_gold');
+    // Held chair indicator for Phase 4 & 5
+    this.chairIcon = scene.add.sprite(x, y - 58, 'proj_chair_gold');
     this.chairIcon.setDepth(22);
     this.chairIcon.setVisible(false);
     this.chairIcon.setScale(0.85);
@@ -94,13 +94,11 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     }
 
     if (this.levelNumber === 3) {
-      // Carteira de Trabalho has slightly slower cadence but pierces & deals high damage
-      this.fireRateMs = 230;
+      this.fireRateMs = 220;
     } else if (this.isBolsonaroMode) {
-      // Arminha laser rapid fire
-      this.fireRateMs = 135;
+      this.fireRateMs = 130;
     } else {
-      this.fireRateMs = 150;
+      this.fireRateMs = 145;
     }
   }
 
@@ -131,37 +129,50 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       this.setFlipX(false);
     }
 
-    // Crouch logic (when on ground and holding down without moving fast, or slower crouch walk)
+    // Crouch logic
     if (onGround && aimDown) {
       if (!this.isCrouching) {
         this.isCrouching = true;
-        body.setSize(26, 30);
-        body.setOffset(5, 18);
+        body.setSize(42, 52);
+        body.setOffset(13, 28);
         this.setScale(1, 0.72);
       }
     } else if (this.isCrouching) {
       this.isCrouching = false;
-      body.setSize(26, 46);
-      body.setOffset(5, 2);
+      body.setSize(42, 76);
+      body.setOffset(13, 4);
       this.setScale(1, 1);
     }
 
-    // Horizontal movement
+    // Horizontal movement & Walk Animation
     const effectiveSpeed = this.isCrouching ? this.speed * 0.45 : this.speed;
+    const runAnimKey = this.isBolsonaroMode ? 'bolsonaro_run' : 'soldier_run';
+    const idleTexKey = this.isBolsonaroMode ? 'player_bolsonaro' : 'player_soldier';
+
     if (moveLeft && !moveRight) {
       body.setVelocityX(-effectiveSpeed);
+      if (onGround && !this.anims.isPlaying) {
+        this.play(runAnimKey, true);
+      }
     } else if (moveRight && !moveLeft) {
       body.setVelocityX(effectiveSpeed);
+      if (onGround && !this.anims.isPlaying) {
+        this.play(runAnimKey, true);
+      }
     } else {
       body.setVelocityX(0);
+      if (this.anims.isPlaying) {
+        this.stop();
+        this.setTexture(idleTexKey);
+      }
     }
 
     // Jump
     if (jumpPressed && onGround) {
       if (this.isCrouching) {
         this.isCrouching = false;
-        body.setSize(26, 46);
-        body.setOffset(5, 2);
+        body.setSize(42, 76);
+        body.setOffset(13, 4);
         this.setScale(1, 1);
       }
       body.setVelocityY(this.jumpVelocity);
@@ -184,7 +195,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     const chairsHeld = ScoreManager.getInstance().getChairAmmo();
     this.chairIcon.setVisible(chairsHeld > 0);
     if (chairsHeld > 0) {
-      this.chairIcon.setPosition(this.x, this.y - 36);
+      this.chairIcon.setPosition(this.x, this.y - 56);
     }
 
     // Invulnerability blink effect
@@ -210,21 +221,17 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (up) dy = -1;
     else if (down && !onGround) {
-      // Downward aiming in mid-air (classic Metal Slug downward/diagonal-down shot)
       dy = 1;
     } else if (down && onGround && (left || right)) {
-      // Diagonal down-forward while crouch-moving or aiming
       dy = 0.35;
     }
 
-    // If neither left/right nor up/down is held, aim horizontally in facing direction
     if (dx === 0 && dy === 0) {
       dx = this.facingRight ? 1 : -1;
     }
 
     this.aimAngle = Math.atan2(dy, dx);
 
-    // Human-readable 8-direction label for HUD
     const deg = Math.round(Phaser.Math.RadToDeg(this.aimAngle));
     if (deg === 0) this.aimDirName = '→';
     else if (deg === 180 || deg === -180) this.aimDirName = '←';
@@ -237,44 +244,43 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
   }
 
   private updateWeaponVisual(delta: number): void {
-    const offsetY = this.isCrouching ? 6 : -2;
-    const recoilOffset = this.muzzleFlashTimer > 0 ? -4 : 2;
+    const offsetY = this.isCrouching ? 12 : 4;
+    const recoilOffset = this.muzzleFlashTimer > 0 ? -6 : 2;
     this.muzzleFlashTimer = Math.max(0, this.muzzleFlashTimer - delta);
 
-    const armX = this.x + Math.cos(this.aimAngle) * (12 + recoilOffset);
-    const armY = this.y + offsetY + Math.sin(this.aimAngle) * (12 + recoilOffset);
+    const armX = this.x + Math.cos(this.aimAngle) * (20 + recoilOffset);
+    const armY = this.y + offsetY + Math.sin(this.aimAngle) * (20 + recoilOffset);
 
     this.armGraphic.setPosition(armX, armY);
     this.armGraphic.setRotation(this.aimAngle);
     this.armGraphic.setFlipY(Math.abs(this.aimAngle) > Math.PI / 2);
 
     if (this.isBolsonaroMode) {
-      // Pulse scale slightly when shooting "arminha com a mão"
-      const scale = this.muzzleFlashTimer > 0 ? 1.35 : 1.0;
+      const scale = this.muzzleFlashTimer > 0 ? 1.3 : 1.0;
       this.armGraphic.setScale(scale);
     }
   }
 
   private shootProjectile(): void {
     this.muzzleFlashTimer = 70;
-    const spawnDist = 22;
+    const spawnDist = 34;
     const spawnX = this.x + Math.cos(this.aimAngle) * spawnDist;
     const spawnY =
-      this.y + (this.isCrouching ? 6 : -2) + Math.sin(this.aimAngle) * spawnDist;
+      this.y + (this.isCrouching ? 12 : 4) + Math.sin(this.aimAngle) * spawnDist;
 
     let projType: ProjectileType = 'bullet';
-    let speed = 560;
+    let speed = 580;
     let damage = 14;
     let piercing = false;
 
     if (this.levelNumber === 3) {
       projType = 'ctps';
-      speed = 460;
+      speed = 480;
       damage = 24;
       piercing = true;
     } else if (this.isBolsonaroMode) {
       projType = 'arminha_laser';
-      speed = 640;
+      speed = 660;
       damage = 18;
     }
 
@@ -303,10 +309,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
       return false;
     }
 
-    const speed = 520;
+    const speed = 540;
     this.projectilePool.spawn({
-      x: this.x + Math.cos(this.aimAngle) * 24,
-      y: this.y - 6 + Math.sin(this.aimAngle) * 24,
+      x: this.x + Math.cos(this.aimAngle) * 32,
+      y: this.y - 4 + Math.sin(this.aimAngle) * 32,
       vx: Math.cos(this.aimAngle) * speed,
       vy: Math.sin(this.aimAngle) * speed - 60,
       type: 'chair_player',
@@ -326,7 +332,6 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     this.hp = Math.max(0, this.hp - amount);
     this.invulnerableUntil = time + 950;
 
-    // Flash tint
     this.setTintFill(0xff3333);
     this.scene.time.delayedCall(120, () => {
       if (this.active) this.clearTint();

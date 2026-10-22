@@ -325,13 +325,13 @@ export class WaveManager {
     let enemy: Enemy;
     switch (kind) {
       case 'red_shirt':
-        enemy = new RedShirtEnemy(this.scene, x, 410, this.player, this.enemyProjectiles);
+        enemy = new RedShirtEnemy(this.scene, x, 395, this.player, this.enemyProjectiles);
         break;
       case 'police_car':
         enemy = new PoliceHazardEnemy(
           this.scene,
           x,
-          420,
+          415,
           false,
           this.player,
           this.enemyProjectiles
@@ -341,7 +341,7 @@ export class WaveManager {
         enemy = new PoliceHazardEnemy(
           this.scene,
           x,
-          135,
+          125,
           true,
           this.player,
           this.enemyProjectiles
@@ -351,7 +351,7 @@ export class WaveManager {
         enemy = new BlondeRobotEnemy(
           this.scene,
           x,
-          410,
+          395,
           this.player,
           this.enemyProjectiles
         );
@@ -360,7 +360,7 @@ export class WaveManager {
         enemy = new DroneJetEnemy(
           this.scene,
           x,
-          135,
+          125,
           this.player,
           this.enemyProjectiles
         );
@@ -369,7 +369,7 @@ export class WaveManager {
         enemy = new PopularCarEnemy(
           this.scene,
           x,
-          420,
+          415,
           this.player,
           this.enemyProjectiles
         );
@@ -378,7 +378,7 @@ export class WaveManager {
         enemy = new OccupierMilitantEnemy(
           this.scene,
           x,
-          410,
+          395,
           this.player,
           this.enemyProjectiles
         );
@@ -388,7 +388,7 @@ export class WaveManager {
         enemy = new DatenaCloneEnemy(
           this.scene,
           x,
-          410,
+          395,
           this.player,
           this.enemyProjectiles
         );
@@ -404,7 +404,7 @@ export class WaveManager {
       boss = new GloriaGrooveBoss(
         this.scene,
         spawnX,
-        395,
+        375,
         this.player,
         this.enemyProjectiles,
         this.enemiesGroup
@@ -413,7 +413,7 @@ export class WaveManager {
       boss = new ErikaHiltonJetBoss(
         this.scene,
         spawnX,
-        150,
+        145,
         this.player,
         this.enemyProjectiles,
         this.enemiesGroup
@@ -422,7 +422,7 @@ export class WaveManager {
       boss = new BoulosBoss(
         this.scene,
         spawnX,
-        395,
+        382,
         this.player,
         this.enemyProjectiles,
         this.enemiesGroup
@@ -431,7 +431,7 @@ export class WaveManager {
       boss = new DatenaSupremoBoss(
         this.scene,
         spawnX,
-        395,
+        382,
         this.player,
         this.enemyProjectiles,
         this.enemiesGroup
@@ -440,7 +440,7 @@ export class WaveManager {
       boss = new LulaFinalBoss(
         this.scene,
         spawnX,
-        240,
+        235,
         this.player,
         this.enemyProjectiles,
         this.enemiesGroup

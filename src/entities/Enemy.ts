@@ -74,12 +74,12 @@ export abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hpBar.clear();
     if (!this.active || this.hp >= this.maxHp || this.hp <= 0) return;
 
-    const w = 30;
-    const h = 4;
+    const w = 48;
+    const h = 6;
     const bx = this.x - w / 2;
-    const by = this.y - this.displayHeight / 2 - 10;
+    const by = this.y - this.displayHeight / 2 - 12;
 
-    this.hpBar.fillStyle(0x000000, 0.75);
+    this.hpBar.fillStyle(0x000000, 0.8);
     this.hpBar.fillRect(bx - 1, by - 1, w + 2, h + 2);
 
     const ratio = Phaser.Math.Clamp(this.hp / this.maxHp, 0, 1);
@@ -90,14 +90,15 @@ export abstract class Enemy extends Phaser.Physics.Arcade.Sprite {
   protected die(): void {
     this.hpBar.clear();
     this.hpBar.destroy();
-    // Small explosion particle flash
-    const boom = this.scene.add.circle(this.x, this.y, 18, 0xffaa00, 0.9);
+    // Metal Slug style multi-ring explosion flash
+    const boom = this.scene.add.circle(this.x, this.y, 28, 0xffaa00, 0.95);
+    boom.setStrokeStyle(4, 0xff3300);
     boom.setDepth(30);
     this.scene.tweens.add({
       targets: boom,
-      scale: 2.0,
+      scale: 2.2,
       alpha: 0,
-      duration: 220,
+      duration: 260,
       onComplete: () => boom.destroy()
     });
     this.destroy();
@@ -133,7 +134,8 @@ export class RedShirtEnemy extends Enemy {
     this.actionCooldown = Phaser.Math.Between(700, 1500);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(26, 44);
+    body.setSize(42, 74);
+    body.setOffset(11, 4);
     body.setCollideWorldBounds(true);
   }
 
@@ -142,11 +144,10 @@ export class RedShirtEnemy extends Enemy {
     const distToPlayer = this.player.x - this.x;
 
     this.patrolTimer += delta;
-    if (Math.abs(distToPlayer) < 280) {
-      // Face player and keep moderate distance while throwing pamphlets
+    if (Math.abs(distToPlayer) < 320) {
       this.setFlipX(distToPlayer < 0);
-      if (Math.abs(distToPlayer) > 160) {
-        body.setVelocityX(Math.sign(distToPlayer) * 75);
+      if (Math.abs(distToPlayer) > 180) {
+        body.setVelocityX(Math.sign(distToPlayer) * 80);
       } else {
         body.setVelocityX(0);
       }
@@ -155,19 +156,19 @@ export class RedShirtEnemy extends Enemy {
         this.patrolDir *= -1;
         this.patrolTimer = 0;
       }
-      body.setVelocityX(this.patrolDir * 60);
+      body.setVelocityX(this.patrolDir * 65);
       this.setFlipX(this.patrolDir < 0);
     }
 
     this.actionCooldown -= delta;
-    if (this.actionCooldown <= 0 && Math.abs(distToPlayer) < 420) {
+    if (this.actionCooldown <= 0 && Math.abs(distToPlayer) < 460) {
       this.actionCooldown = Phaser.Math.Between(1400, 2200);
       const dir = Math.sign(distToPlayer) || -1;
       this.enemyProjectiles.spawn({
-        x: this.x + dir * 16,
-        y: this.y - 8,
-        vx: dir * 230,
-        vy: -120,
+        x: this.x + dir * 24,
+        y: this.y - 12,
+        vx: dir * 240,
+        vy: -130,
         type: 'pamphlet',
         damage: 10,
         isPlayerOwned: false,
@@ -205,7 +206,7 @@ export class PoliceHazardEnemy extends Enemy {
     );
     this.isHeli = isHeli;
     this.baseY = y;
-    this.maxHp = isHeli ? 65 : 80;
+    this.maxHp = isHeli ? 65 : 85;
     this.hp = this.maxHp;
     this.scoreValue = 250;
     this.contactDamage = 18;
@@ -214,10 +215,12 @@ export class PoliceHazardEnemy extends Enemy {
     const body = this.body as Phaser.Physics.Arcade.Body;
     if (isHeli) {
       body.setAllowGravity(false);
-      body.setSize(68, 34);
+      body.setSize(116, 56);
+      body.setOffset(10, 8);
     } else {
       body.setImmovable(true);
-      body.setSize(74, 38);
+      body.setSize(118, 62);
+      body.setOffset(7, 6);
     }
   }
 
@@ -226,22 +229,20 @@ export class PoliceHazardEnemy extends Enemy {
 
     if (this.isHeli) {
       this.hoverPhase += delta * 0.003;
-      const targetX = this.player.x + Math.sin(this.hoverPhase) * 140;
-      body.setVelocityX(Phaser.Math.Clamp((targetX - this.x) * 1.4, -130, 130));
+      const targetX = this.player.x + Math.sin(this.hoverPhase) * 150;
+      body.setVelocityX(Phaser.Math.Clamp((targetX - this.x) * 1.4, -140, 140));
       this.y = this.baseY + Math.sin(this.hoverPhase * 2) * 18;
       this.setFlipX(this.player.x < this.x);
     } else {
-      // Police car advances slowly and stops as roadblock hazard
       const dist = this.player.x - this.x;
-      if (Math.abs(dist) > 220) {
-        body.setVelocityX(Math.sign(dist) * 55);
+      if (Math.abs(dist) > 250) {
+        body.setVelocityX(Math.sign(dist) * 60);
       } else {
         body.setVelocityX(0);
       }
       this.setFlipX(dist < 0);
     }
 
-    // Periodic burst attack
     this.actionCooldown -= delta;
     if (this.actionCooldown <= 0) {
       this.actionCooldown = this.isHeli ? 1700 : 2000;
@@ -251,10 +252,10 @@ export class PoliceHazardEnemy extends Enemy {
         this.player.x,
         this.player.y
       );
-      const speed = 280;
+      const speed = 290;
       this.enemyProjectiles.spawn({
         x: this.x,
-        y: this.y + (this.isHeli ? 14 : -6),
+        y: this.y + (this.isHeli ? 22 : -8),
         vx: Math.cos(angle) * speed,
         vy: Math.sin(angle) * speed,
         type: 'police_bullet',
@@ -284,19 +285,20 @@ export class BackupDancerEnemy extends Enemy {
     this.scoreValue = 90;
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(24, 42);
+    body.setSize(38, 70);
+    body.setOffset(11, 4);
     body.setCollideWorldBounds(true);
   }
 
   protected updateAI(_time: number, delta: number): void {
     const body = this.body as Phaser.Physics.Arcade.Body;
     const dir = Math.sign(this.player.x - this.x) || -1;
-    body.setVelocityX(dir * 115);
+    body.setVelocityX(dir * 120);
     this.setFlipX(dir < 0);
 
     this.jumpTimer -= delta;
     if (this.jumpTimer <= 0 && body.blocked.down) {
-      body.setVelocityY(-310);
+      body.setVelocityY(-340);
       this.jumpTimer = Phaser.Math.Between(900, 1500);
     }
   }
@@ -316,14 +318,15 @@ export class BlondeRobotEnemy extends Enemy {
     enemyProjectiles: ProjectilePool
   ) {
     super(scene, x, y, 'enemy_blonde_robot', 'blonde_robot', player, enemyProjectiles);
-    this.maxHp = 42;
-    this.hp = 42;
+    this.maxHp = 45;
+    this.hp = 45;
     this.scoreValue = 150;
     this.contactDamage = 15;
-    this.marchSpeed = Phaser.Math.Between(135, 175);
+    this.marchSpeed = Phaser.Math.Between(140, 180);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(28, 46);
+    body.setSize(44, 78);
+    body.setOffset(11, 4);
     body.setCollideWorldBounds(true);
   }
 
@@ -333,7 +336,6 @@ export class BlondeRobotEnemy extends Enemy {
     body.setVelocityX(dir * this.marchSpeed);
     this.setFlipX(dir < 0);
 
-    // Robotic marching bobbing effect
     this.setAngle(Math.sin(time * 0.02) * 5);
   }
 }
@@ -354,15 +356,16 @@ export class DroneJetEnemy extends Enemy {
   ) {
     super(scene, x, y, 'enemy_drone_jet', 'drone_jet', player, enemyProjectiles);
     this.baseAltitude = y;
-    this.maxHp = 38;
-    this.hp = 38;
+    this.maxHp = 40;
+    this.hp = 40;
     this.scoreValue = 180;
     this.contactDamage = 16;
     this.actionCooldown = Phaser.Math.Between(900, 1800);
 
     const body = this.body as Phaser.Physics.Arcade.Body;
     body.setAllowGravity(false);
-    body.setSize(44, 24);
+    body.setSize(74, 38);
+    body.setOffset(7, 5);
   }
 
   protected updateAI(_time: number, delta: number): void {
@@ -370,27 +373,25 @@ export class DroneJetEnemy extends Enemy {
     const dx = this.player.x - this.x;
 
     if (this.stateMode === 'patrol') {
-      body.setVelocityX(Math.sign(dx || -1) * 160);
+      body.setVelocityX(Math.sign(dx || -1) * 165);
       body.setVelocityY((this.baseAltitude - this.y) * 2);
       this.setFlipX(dx < 0);
 
       this.actionCooldown -= delta;
-      if (Math.abs(dx) < 95 && this.actionCooldown <= 0) {
-        // Trigger vertical swoop attack (ataque rasante vertical)
+      if (Math.abs(dx) < 105 && this.actionCooldown <= 0) {
         this.stateMode = 'diving';
-        body.setVelocityX(Math.sign(dx || -1) * 70);
-        body.setVelocityY(320);
+        body.setVelocityX(Math.sign(dx || -1) * 75);
+        body.setVelocityY(330);
       }
     } else if (this.stateMode === 'diving') {
-      if (this.y >= 390 || body.blocked.down) {
+      if (this.y >= 380 || body.blocked.down) {
         this.stateMode = 'recovering';
-        body.setVelocityY(-240);
-        // Drop a projectile on pull-up
+        body.setVelocityY(-250);
         this.enemyProjectiles.spawn({
           x: this.x,
           y: this.y,
           vx: 0,
-          vy: 200,
+          vy: 220,
           type: 'police_bullet',
           damage: 12,
           isPlayerOwned: false
@@ -421,14 +422,15 @@ export class PopularCarEnemy extends Enemy {
     enemyProjectiles: ProjectilePool
   ) {
     super(scene, x, y, 'enemy_popular_car', 'popular_car', player, enemyProjectiles);
-    this.maxHp = 55;
-    this.hp = 55;
+    this.maxHp = 60;
+    this.hp = 60;
     this.scoreValue = 200;
     this.contactDamage = 20;
     this.dashDir = this.player.x < x ? -1 : 1;
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(68, 34);
+    body.setSize(116, 58);
+    body.setOffset(8, 6);
     body.setCollideWorldBounds(true);
     body.setBounce(1, 0);
   }
@@ -438,7 +440,7 @@ export class PopularCarEnemy extends Enemy {
     if (body.blocked.left) this.dashDir = 1;
     if (body.blocked.right) this.dashDir = -1;
 
-    body.setVelocityX(this.dashDir * 255);
+    body.setVelocityX(this.dashDir * 265);
     this.setFlipX(this.dashDir < 0);
   }
 }
@@ -465,12 +467,11 @@ export class OccupierMilitantEnemy extends Enemy {
       player,
       enemyProjectiles
     );
-    this.maxHp = 38;
-    this.hp = 38;
+    this.maxHp = 40;
+    this.hp = 40;
     this.scoreValue = 140;
     this.actionCooldown = 900;
 
-    // Spawn animation coming out of abandoned building window/door
     this.setScale(0.3);
     this.setAlpha(0.5);
     scene.tweens.add({
@@ -481,7 +482,8 @@ export class OccupierMilitantEnemy extends Enemy {
     });
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(26, 44);
+    body.setSize(42, 74);
+    body.setOffset(11, 4);
     body.setCollideWorldBounds(true);
   }
 
@@ -496,20 +498,20 @@ export class OccupierMilitantEnemy extends Enemy {
     const dir = Math.sign(dx) || -1;
     this.setFlipX(dir < 0);
 
-    if (Math.abs(dx) > 130) {
+    if (Math.abs(dx) > 150) {
       body.setVelocityX(dir * 95);
     } else {
       body.setVelocityX(0);
     }
 
     this.actionCooldown -= delta;
-    if (this.actionCooldown <= 0 && Math.abs(dx) < 380) {
+    if (this.actionCooldown <= 0 && Math.abs(dx) < 420) {
       this.actionCooldown = Phaser.Math.Between(1300, 1900);
       this.enemyProjectiles.spawn({
-        x: this.x + dir * 14,
-        y: this.y - 6,
+        x: this.x + dir * 22,
+        y: this.y - 10,
         vx: dir * 250,
-        vy: -90,
+        vy: -100,
         type: 'pamphlet',
         damage: 11,
         isPlayerOwned: false,
@@ -542,13 +544,14 @@ export class DatenaCloneEnemy extends Enemy {
       player,
       enemyProjectiles
     );
-    this.maxHp = 50;
-    this.hp = 50;
+    this.maxHp = 52;
+    this.hp = 52;
     this.scoreValue = 175;
     this.contactDamage = 18;
 
     const body = this.body as Phaser.Physics.Arcade.Body;
-    body.setSize(28, 46);
+    body.setSize(46, 76);
+    body.setOffset(11, 4);
     body.setCollideWorldBounds(true);
   }
 
@@ -559,13 +562,11 @@ export class DatenaCloneEnemy extends Enemy {
 
     this.setFlipX(dir < 0);
 
-    // Charge aggressively when close for melee baton attack
-    const speed = Math.abs(dx) < 220 ? 155 : 95;
+    const speed = Math.abs(dx) < 250 ? 160 : 100;
     body.setVelocityX(dir * speed);
 
-    // Melee baton lunge animation when near player
     this.swingTimer -= delta;
-    if (Math.abs(dx) < 55 && this.swingTimer <= 0) {
+    if (Math.abs(dx) < 75 && this.swingTimer <= 0) {
       this.swingTimer = 700;
       this.scene.tweens.add({
         targets: this,
